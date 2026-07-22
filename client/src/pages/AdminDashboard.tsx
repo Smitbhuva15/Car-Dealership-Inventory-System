@@ -1,22 +1,36 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { Plus, Edit2, Trash2, Search, Car, AlertCircle, RefreshCw } from "lucide-react";
+import { Plus, Edit2, Trash2, PackagePlus, Car, AlertCircle, RefreshCw } from "lucide-react";
 import toast from "react-hot-toast";
-import { getAllVehicles, deleteVehicle, type Vehicle,  } from "../services/api";
+import { getAllVehicles, deleteVehicle, searchVehiclesApi, type Vehicle, type SearchFilters } from "../services/api";
+import RestockModal from "../components/RestockModal";
+import AdvancedSearchFilter from "../components/AdvancedSearchFilter";
 
 const AdminDashboard = () => {
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState("All");
   const [loading, setLoading] = useState<boolean>(true);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchVehicles = async () => {
+  // Restock modal state
+  const [restockVehicleItem, setRestockVehicleItem] = useState<Vehicle | null>(null);
+  const [isRestockOpen, setIsRestockOpen] = useState<boolean>(false);
+
+  // Active filters state
+  const [activeFilters, setActiveFilters] = useState<SearchFilters | null>(null);
+
+  const fetchVehicles = async (filters?: SearchFilters) => {
     try {
       setLoading(true);
       setError(null);
-      const data = await getAllVehicles();
+      
+      let data: Vehicle[];
+      if (filters && (filters.make || filters.model || (filters.category && filters.category !== "All") || filters.minPrice || filters.maxPrice)) {
+        data = await searchVehiclesApi(filters);
+      } else {
+        data = await getAllVehicles();
+      }
+      
       setVehicles(data);
     } catch (err: any) {
       const errorMsg = err.message || "Failed to load vehicle inventory.";
@@ -30,6 +44,16 @@ const AdminDashboard = () => {
   useEffect(() => {
     fetchVehicles();
   }, []);
+
+  const handleSearch = (filters: SearchFilters) => {
+    setActiveFilters(filters);
+    fetchVehicles(filters);
+  };
+
+  const handleResetFilters = () => {
+    setActiveFilters(null);
+    fetchVehicles();
+  };
 
   const handleDelete = async (id: string, make: string, model: string) => {
     if (!window.confirm(`Are you sure you want to delete ${make} ${model}?`)) {
@@ -48,17 +72,10 @@ const AdminDashboard = () => {
     }
   };
 
-  // Filter vehicles
-  const categories = ["All", ...Array.from(new Set(vehicles.map((v) => v.category).filter(Boolean)))];
-
-  const filteredVehicles = vehicles.filter((v) => {
-    const matchesSearch =
-      v.make.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      v.model.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      v.category.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesCategory = selectedCategory === "All" || v.category === selectedCategory;
-    return matchesSearch && matchesCategory;
-  });
+  const handleOpenRestock = (vehicle: Vehicle) => {
+    setRestockVehicleItem(vehicle);
+    setIsRestockOpen(true);
+  };
 
   return (
     <div className="space-y-8 py-4">
@@ -67,12 +84,12 @@ const AdminDashboard = () => {
         <div>
           <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">Admin Dashboard</h1>
           <p className="text-sm text-slate-500 mt-1">
-            Manage your dealership vehicle listings, stock, and pricing
+            Manage your dealership vehicle listings, stock restock, and pricing
           </p>
         </div>
         <div className="flex items-center space-x-3">
           <button
-            onClick={fetchVehicles}
+            onClick={() => fetchVehicles(activeFilters || undefined)}
             className="p-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors"
             title="Refresh List"
           >
@@ -88,43 +105,13 @@ const AdminDashboard = () => {
         </div>
       </div>
 
-      {/* Search & Category Filter Bar */}
-      <div className="bg-white border border-slate-200 p-4 rounded-2xl shadow-sm flex flex-col md:flex-row gap-4 justify-between items-center">
-        <div className="relative w-full md:w-96">
-          <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
-            <Search className="w-5 h-5" />
-          </div>
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search make, model, or category..."
-            className="w-full pl-11 pr-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-sm focus:outline-none focus:border-[#8948E5] focus:ring-2 focus:ring-[#8948E5]/20 transition-all"
-          />
-        </div>
+      {/* Advanced Search & Filter Bar */}
+      <AdvancedSearchFilter
+        onSearch={handleSearch}
+        onReset={handleResetFilters}
+      />
 
-        {/* Category Pills */}
-        <div className="flex items-center space-x-2 overflow-x-auto w-full md:w-auto pb-1 md:pb-0">
-          <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider mr-2 hidden lg:inline">
-            Category:
-          </span>
-          {categories.map((cat) => (
-            <button
-              key={cat}
-              onClick={() => setSelectedCategory(cat)}
-              className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-colors ${
-                selectedCategory === cat
-                  ? "bg-[#8948E5] text-white shadow-sm"
-                  : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-              }`}
-            >
-              {cat}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Error state */}
+      {/* Error State */}
       {error && (
         <div className="p-4 rounded-2xl bg-red-50 border border-red-200 text-red-600 text-sm flex items-center justify-between">
           <div className="flex items-center space-x-3">
@@ -132,7 +119,7 @@ const AdminDashboard = () => {
             <span>{error}</span>
           </div>
           <button
-            onClick={fetchVehicles}
+            onClick={() => fetchVehicles(activeFilters || undefined)}
             className="px-3 py-1 bg-red-100 hover:bg-red-200 rounded-lg text-xs font-bold"
           >
             Retry
@@ -146,26 +133,23 @@ const AdminDashboard = () => {
           <div className="w-10 h-10 border-4 border-[#8948E5] border-t-transparent rounded-full animate-spin"></div>
           <p className="text-slate-500 text-sm font-medium">Loading inventory data...</p>
         </div>
-      ) : filteredVehicles.length === 0 ? (
+      ) : vehicles.length === 0 ? (
         <div className="bg-white border border-slate-200 rounded-3xl p-12 text-center space-y-4 shadow-sm">
           <div className="w-16 h-16 rounded-3xl bg-[#8948E5]/10 text-[#8948E5] flex items-center justify-center mx-auto">
             <Car className="w-8 h-8" />
           </div>
           <h3 className="text-xl font-bold text-slate-900">No Vehicles Found</h3>
           <p className="text-slate-500 text-sm max-w-md mx-auto">
-            {searchQuery || selectedCategory !== "All"
-              ? "No vehicle matches your current filter criteria. Try clearing search query."
+            {activeFilters
+              ? "No vehicle matches your filter criteria. Try expanding search parameters."
               : "Your dealership inventory is currently empty. Click 'Add New Vehicle' to create your first vehicle listing."}
           </p>
-          {searchQuery || selectedCategory !== "All" ? (
+          {activeFilters ? (
             <button
-              onClick={() => {
-                setSearchQuery("");
-                setSelectedCategory("All");
-              }}
+              onClick={handleResetFilters}
               className="px-4 py-2 rounded-xl bg-slate-100 text-slate-700 font-semibold text-sm hover:bg-slate-200"
             >
-              Clear Filters
+              Reset Search Filters
             </button>
           ) : (
             <Link
@@ -191,7 +175,7 @@ const AdminDashboard = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 text-sm font-medium">
-                {filteredVehicles.map((vehicle) => (
+                {vehicles.map((vehicle) => (
                   <tr key={vehicle._id} className="hover:bg-slate-50/80 transition-colors">
                     {/* Make & Model */}
                     <td className="py-4 px-6">
@@ -235,8 +219,19 @@ const AdminDashboard = () => {
                       </span>
                     </td>
 
-                    {/* Actions */}
-                    <td className="py-4 px-6 text-right space-x-2">
+                    {/* Action Buttons */}
+                    <td className="py-4 px-6 text-right space-x-1.5">
+                      {/* Restock Button */}
+                      <button
+                        onClick={() => handleOpenRestock(vehicle)}
+                        className="inline-flex items-center px-2.5 py-1.5 rounded-xl text-xs font-bold text-[#8948E5] bg-[#8948E5]/10 hover:bg-[#8948E5]/20 transition-colors"
+                        title="Restock Vehicle"
+                      >
+                        <PackagePlus className="w-3.5 h-3.5 mr-1" />
+                        Restock
+                      </button>
+
+                      {/* Edit Button */}
                       <Link
                         to={`/admin/vehicles/edit/${vehicle._id}`}
                         className="inline-flex items-center p-2 rounded-xl text-slate-600 hover:text-[#8948E5] hover:bg-[#8948E5]/10 transition-colors"
@@ -244,6 +239,8 @@ const AdminDashboard = () => {
                       >
                         <Edit2 className="w-4 h-4" />
                       </Link>
+
+                      {/* Delete Button */}
                       <button
                         onClick={() => handleDelete(vehicle._id, vehicle.make, vehicle.model)}
                         disabled={deletingId === vehicle._id}
@@ -264,6 +261,17 @@ const AdminDashboard = () => {
           </div>
         </div>
       )}
+
+      {/* Restock Modal */}
+      <RestockModal
+        vehicle={restockVehicleItem}
+        isOpen={isRestockOpen}
+        onClose={() => {
+          setIsRestockOpen(false);
+          setRestockVehicleItem(null);
+        }}
+        onSuccess={() => fetchVehicles(activeFilters || undefined)}
+      />
     </div>
   );
 };

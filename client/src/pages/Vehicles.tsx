@@ -1,20 +1,27 @@
 import { useState, useEffect } from "react";
-import { Search, Car, AlertCircle, RefreshCw, CheckCircle2 } from "lucide-react";
+import { Car, AlertCircle, RefreshCw, CheckCircle2 } from "lucide-react";
 import toast from "react-hot-toast";
-import { getAllVehicles, type Vehicle} from "../services/api";
+import { getAllVehicles, searchVehiclesApi, type Vehicle, type SearchFilters } from "../services/api";
+import AdvancedSearchFilter from "../components/AdvancedSearchFilter";
 
 const Vehicles = () => {
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState("All");
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const [activeFilters, setActiveFilters] = useState<SearchFilters | null>(null);
 
-  const fetchVehicles = async () => {
+  const fetchVehicles = async (filters?: SearchFilters) => {
     try {
       setLoading(true);
       setError(null);
-      const data = await getAllVehicles();
+
+      let data: Vehicle[];
+      if (filters && (filters.make || filters.model || (filters.category && filters.category !== "All") || filters.minPrice || filters.maxPrice)) {
+        data = await searchVehiclesApi(filters);
+      } else {
+        data = await getAllVehicles();
+      }
+
       setVehicles(data);
     } catch (err: any) {
       const errorMsg = err.message || "Failed to load vehicle inventory.";
@@ -29,16 +36,15 @@ const Vehicles = () => {
     fetchVehicles();
   }, []);
 
-  const categories = ["All", ...Array.from(new Set(vehicles.map((v) => v.category).filter(Boolean)))];
+  const handleSearch = (filters: SearchFilters) => {
+    setActiveFilters(filters);
+    fetchVehicles(filters);
+  };
 
-  const filteredVehicles = vehicles.filter((v) => {
-    const matchesSearch =
-      v.make.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      v.model.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      v.category.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesCategory = selectedCategory === "All" || v.category === selectedCategory;
-    return matchesSearch && matchesCategory;
-  });
+  const handleResetFilters = () => {
+    setActiveFilters(null);
+    fetchVehicles();
+  };
 
   return (
     <div className="space-y-8 py-4">
@@ -51,7 +57,7 @@ const Vehicles = () => {
           </p>
         </div>
         <button
-          onClick={fetchVehicles}
+          onClick={() => fetchVehicles(activeFilters || undefined)}
           className="p-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors self-start sm:self-auto"
           title="Refresh List"
         >
@@ -59,41 +65,11 @@ const Vehicles = () => {
         </button>
       </div>
 
-      {/* Filter & Search Bar */}
-      <div className="bg-white border border-slate-200 p-4 rounded-2xl shadow-sm flex flex-col md:flex-row gap-4 justify-between items-center">
-        <div className="relative w-full md:w-96">
-          <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
-            <Search className="w-5 h-5" />
-          </div>
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search make, model, or category..."
-            className="w-full pl-11 pr-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-sm focus:outline-none focus:border-[#8948E5] focus:ring-2 focus:ring-[#8948E5]/20 transition-all"
-          />
-        </div>
-
-        {/* Category Pills */}
-        <div className="flex items-center space-x-2 overflow-x-auto w-full md:w-auto pb-1 md:pb-0">
-          <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider mr-2 hidden lg:inline">
-            Category:
-          </span>
-          {categories.map((cat) => (
-            <button
-              key={cat}
-              onClick={() => setSelectedCategory(cat)}
-              className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-colors ${
-                selectedCategory === cat
-                  ? "bg-[#8948E5] text-white shadow-sm"
-                  : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-              }`}
-            >
-              {cat}
-            </button>
-          ))}
-        </div>
-      </div>
+      {/* Advanced Search & Filter Bar */}
+      <AdvancedSearchFilter
+        onSearch={handleSearch}
+        onReset={handleResetFilters}
+      />
 
       {/* Error State */}
       {error && (
@@ -103,7 +79,7 @@ const Vehicles = () => {
             <span>{error}</span>
           </div>
           <button
-            onClick={fetchVehicles}
+            onClick={() => fetchVehicles(activeFilters || undefined)}
             className="px-3 py-1 bg-red-100 hover:bg-red-200 rounded-lg text-xs font-bold"
           >
             Retry
@@ -115,23 +91,31 @@ const Vehicles = () => {
       {loading ? (
         <div className="bg-white border border-slate-200 rounded-3xl p-12 text-center flex flex-col items-center justify-center space-y-4">
           <div className="w-10 h-10 border-4 border-[#8948E5] border-t-transparent rounded-full animate-spin"></div>
-          <p className="text-slate-500 text-sm font-medium">Loading inventory...</p>
+          <p className="text-slate-500 text-sm font-medium">Searching inventory...</p>
         </div>
-      ) : filteredVehicles.length === 0 ? (
+      ) : vehicles.length === 0 ? (
         <div className="bg-white border border-slate-200 rounded-3xl p-12 text-center space-y-4 shadow-sm">
           <div className="w-16 h-16 rounded-3xl bg-[#8948E5]/10 text-[#8948E5] flex items-center justify-center mx-auto">
             <Car className="w-8 h-8" />
           </div>
-          <h3 className="text-xl font-bold text-slate-900">No Vehicles Available</h3>
+          <h3 className="text-xl font-bold text-slate-900">No Vehicles Found</h3>
           <p className="text-slate-500 text-sm max-w-md mx-auto">
-            {searchQuery || selectedCategory !== "All"
-              ? "No vehicle matches your current filter criteria."
+            {activeFilters
+              ? "No vehicle matches your filter criteria. Try expanding search parameters."
               : "No vehicle listings are currently published in the catalog."}
           </p>
+          {activeFilters && (
+            <button
+              onClick={handleResetFilters}
+              className="px-4 py-2 rounded-xl bg-slate-100 text-slate-700 font-semibold text-sm hover:bg-slate-200"
+            >
+              Reset Filters
+            </button>
+          )}
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredVehicles.map((vehicle) => (
+          {vehicles.map((vehicle) => (
             <div
               key={vehicle._id}
               className="bg-white border border-slate-200 rounded-3xl p-6 shadow-sm hover:shadow-md hover:border-[#8948E5]/40 transition-all flex flex-col justify-between space-y-4"

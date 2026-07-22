@@ -48,6 +48,14 @@ export interface VehiclePayload {
   quantity: number;
 }
 
+export interface SearchFilters {
+  make?: string;
+  model?: string;
+  category?: string;
+  minPrice?: number | string;
+  maxPrice?: number | string;
+}
+
 // Auth API Calls
 export const registerUser = async (data: RegisterPayload): Promise<RegisterResponse> => {
   const response = await fetch('/api/auth/register', {
@@ -182,4 +190,95 @@ export const updateVehicle = async (
   return responseData;
 };
 
+export const deleteVehicle = async (id: string): Promise<{ message: string }> => {
+  let response = await fetch(`/api/vehicles/delete/${id}`, {
+    method: 'DELETE',
+    credentials: 'include',
+  });
 
+  if (response.status === 404) {
+    response = await fetch(`/api/vehicles/${id}`, {
+      method: 'DELETE',
+      credentials: 'include',
+    });
+  }
+
+  const responseData = await response.json();
+
+  if (!response.ok) {
+    throw new Error(responseData.error || responseData.message || 'Failed to delete vehicle.');
+  }
+
+  return responseData;
+};
+
+export const restockVehicle = async (id: string, quantity: number): Promise<{ message: string; vehicle?: Vehicle }> => {
+  let response = await fetch(`/api/vehicles/restock/${id}`, {
+    method: 'POST',
+    credentials: 'include',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ quantity }),
+  });
+
+  if (response.status === 404) {
+    response = await fetch(`/api/vehicles/${id}/restock`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ quantity }),
+    });
+  }
+
+  const responseData = await response.json();
+
+  if (!response.ok) {
+    throw new Error(responseData.error || responseData.message || 'Failed to restock vehicle.');
+  }
+
+  return responseData;
+};
+
+export const searchVehiclesApi = async (filters: SearchFilters): Promise<Vehicle[]> => {
+  const queryParams = new URLSearchParams();
+
+  if (filters.make && filters.make.trim()) {
+    queryParams.append('make', filters.make.trim());
+  }
+  if (filters.model && filters.model.trim()) {
+    queryParams.append('model', filters.model.trim());
+  }
+  if (filters.category && filters.category.trim() && filters.category !== 'All') {
+    queryParams.append('category', filters.category.trim());
+  }
+  if (filters.minPrice !== undefined && filters.minPrice !== '') {
+    queryParams.append('minPrice', filters.minPrice.toString());
+  }
+  if (filters.maxPrice !== undefined && filters.maxPrice !== '') {
+    queryParams.append('maxPrice', filters.maxPrice.toString());
+  }
+
+  const queryString = queryParams.toString();
+  const url = queryString ? `/api/vehicles/search?${queryString}` : '/api/vehicles/view-all';
+
+  const response = await fetch(url, {
+    method: 'GET',
+    credentials: 'include',
+  });
+
+  const responseData = await response.json();
+
+  if (response.status === 404) {
+    // 404 returned by backend search endpoint when 0 vehicles match filter
+    return [];
+  }
+
+  if (!response.ok) {
+    throw new Error(responseData.error || responseData.message || 'Search failed.');
+  }
+
+  return Array.isArray(responseData) ? responseData : responseData.vehicles || [];
+};

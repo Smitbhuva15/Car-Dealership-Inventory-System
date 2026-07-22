@@ -31,7 +31,7 @@ const Navbar = () => {
             </div>
             <div className="flex flex-col">
               <span className="text-xl font-extrabold tracking-wider text-slate-900">
-                AutoVault
+                Car
               </span>
               <span className="text-xs text-[#8948E5] font-bold tracking-widest uppercase">
                 Dealership

@@ -55,20 +55,6 @@ const Home = () => {
             )}
           </div>
 
-          <div className="pt-6 grid grid-cols-2 sm:grid-cols-3 gap-4 border-t border-slate-200 text-xs text-slate-600 font-medium">
-            <div className="flex items-center space-x-2">
-              <CheckCircle2 className="w-4 h-4 text-[#8948E5]" />
-              <span>Role-Based Access</span>
-            </div>
-            <div className="flex items-center space-x-2">
-              <CheckCircle2 className="w-4 h-4 text-[#8948E5]" />
-              <span>Real-Time Inventory</span>
-            </div>
-            <div className="flex items-center space-x-2">
-              <CheckCircle2 className="w-4 h-4 text-[#8948E5]" />
-              <span>HttpOnly Cookie Auth</span>
-            </div>
-          </div>
         </div>
       </section>
 
