@@ -33,4 +33,23 @@ describe("viewAllVehicles service", () => {
     expect(result).toEqual(vehicles);
   });
 
+  it("should return an empty array when no vehicles exist", async () => {
+    jest.spyOn(Vehicle, "find").mockResolvedValue([] as any);
+
+    const result = await viewAllVehicles();
+
+    expect(Vehicle.find).toHaveBeenCalledTimes(1);
+    expect(result).toEqual([]);
+  });
+
+  it("should throw an error when Vehicle.find fails", async () => {
+    jest.spyOn(Vehicle, "find").mockRejectedValue(new Error("Database error"));
+
+    await expect(viewAllVehicles()).rejects.toThrow(
+      "Failed to fetch vehicles."
+    );
+
+    expect(Vehicle.find).toHaveBeenCalledTimes(1);
+  });
+
 });
