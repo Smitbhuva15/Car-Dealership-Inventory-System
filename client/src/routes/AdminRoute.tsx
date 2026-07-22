@@ -1,10 +1,28 @@
-// AdminRoute.tsx
-import { Navigate } from "react-router-dom";
+import React from "react";
+import { Navigate, useLocation } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 
 const AdminRoute = ({ children }: { children: React.ReactNode }) => {
-  const isAdmin = true; // Replace with your admin check
+  const { isAuthenticated, user, loading } = useAuth();
+  const location = useLocation();
 
-  return isAdmin ? children : <Navigate to="/unauthorized" />;
+  if (loading) {
+    return (
+      <div className="min-h-[60vh] flex items-center justify-center">
+        <div className="w-8 h-8 border-4 border-[#8948E5] border-t-transparent rounded-full animate-spin"></div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return <Navigate to="/login" state={{ from: location }} replace />;
+  }
+
+  if (user?.role !== "admin") {
+    return <Navigate to="/unauthorized" replace />;
+  }
+
+  return <>{children}</>;
 };
 
 export default AdminRoute;

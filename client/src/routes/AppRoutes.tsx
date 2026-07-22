@@ -22,11 +22,18 @@ const AppRoutes = () => {
       <Route element={<MainLayout />}>
         {/* Public Routes */}
         <Route path="/" element={<Home />} />
-        <Route path="/vehicles" element={<Vehicles />} />
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
 
-        {/* Protected Route */}
+        {/* Protected Routes */}
+        <Route
+          path="/vehicles"
+          element={
+            <PrivateRoute>
+              <Vehicles />
+            </PrivateRoute>
+          }
+        />
         <Route
           path="/profile"
           element={
