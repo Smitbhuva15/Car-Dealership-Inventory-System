@@ -1,41 +1,56 @@
+import { User } from "../model/User";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
-import { User } from "../model/User";
 
-export const login = async ({
-  email,
-  password,
-}: {
-  email: string;
-  password: string;
-}) => {
-  const user: any = await User.findOne({ email });
+export const login = async (loginData: any) => {
+  const { email, password } = loginData;
 
-  const isMatch = await bcrypt.compare(password, user.password);
-
-  if (!isMatch) {
-    throw new Error("Invalid credentials.");
-  }
-
-  const token = jwt.sign(
-    {
-      id: user._id.toString(),
-      email: user.email,
-      role: user.role,
-    },
-    process.env.JWT_SECRET as string,
-    {
-      expiresIn: "1d",
+  try {
+    if (!email || typeof email !== "string") {
+      throw new Error("Email is required.");
     }
-  );
 
-  return {
-    user: {
-      id: user._id,
-      name: user.name,
-      email: user.email,
-      role: user.role,
-    },
-    token,
-  };
+    if (!password || typeof password !== "string") {
+      throw new Error("Password is required.");
+    }
+
+    const user: any = await User.findOne({ email });
+
+    if (!user) {
+      throw new Error("Invalid email or password.");
+    }
+
+    const isPasswordValid = await bcrypt.compare(
+      password,
+      user.password
+    );
+
+    if (!isPasswordValid) {
+      throw new Error("Invalid email or password.");
+    }
+
+    const token = jwt.sign(
+      {
+        id: user._id.toString(),
+        email: user.email,
+        role: user.role,
+      },
+      process.env.JWT_SECRET!,
+      {
+        expiresIn: "1d",
+      }
+    );
+
+    return {
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+      },
+      token,
+    };
+  } catch (error: any) {
+    throw new Error(error.message);
+  }
 };
