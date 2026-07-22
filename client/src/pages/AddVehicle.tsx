@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { ArrowLeft, Car, PlusCircle, AlertCircle, DollarSign, Layers, Tag, Hash } from "lucide-react";
+import { ArrowLeft, Car, PlusCircle, AlertCircle, Layers, Tag, Hash } from "lucide-react";
 import toast from "react-hot-toast";
 import { addVehicle } from "../services/api";
 
@@ -206,11 +206,11 @@ const AddVehicle = () => {
             {/* Price */}
             <div className="space-y-1">
               <label className="block text-xs font-semibold uppercase tracking-wider text-slate-700">
-                Price ($) <span className="text-red-500">*</span>
+                Price (₹) <span className="text-red-500">*</span>
               </label>
               <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
-                  <DollarSign className="w-5 h-5" />
+                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400 font-bold text-sm">
+                  ₹
                 </div>
                 <input
                   type="number"
@@ -219,7 +219,7 @@ const AddVehicle = () => {
                   min="0"
                   value={formData.price}
                   onChange={handleChange}
-                  placeholder="25000"
+                  placeholder="1500000"
                   className={`w-full pl-11 pr-4 py-3 rounded-xl bg-slate-50 border ${
                     errors.price ? "border-red-400 focus:ring-red-400" : "border-slate-200 focus:border-[#8948E5]"
                   } text-slate-900 placeholder-slate-400 text-sm focus:outline-none focus:ring-2 focus:ring-[#8948E5]/30 transition-all`}

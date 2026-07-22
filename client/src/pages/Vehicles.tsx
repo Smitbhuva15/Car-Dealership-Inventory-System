@@ -1,14 +1,21 @@
 import { useState, useEffect } from "react";
-import { Car, AlertCircle, RefreshCw, CheckCircle2 } from "lucide-react";
+import { Car, AlertCircle, RefreshCw, CheckCircle2, ShoppingBag } from "lucide-react";
 import toast from "react-hot-toast";
 import { getAllVehicles, searchVehiclesApi, type Vehicle, type SearchFilters } from "../services/api";
+import { useAuth } from "../context/AuthContext";
 import AdvancedSearchFilter from "../components/AdvancedSearchFilter";
+import PurchaseModal from "../components/PurchaseModal";
 
 const Vehicles = () => {
+  const { isAuthenticated } = useAuth();
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [activeFilters, setActiveFilters] = useState<SearchFilters | null>(null);
+
+  // Purchase modal state
+  const [purchaseVehicleItem, setPurchaseVehicleItem] = useState<Vehicle | null>(null);
+  const [isPurchaseOpen, setIsPurchaseOpen] = useState<boolean>(false);
 
   const fetchVehicles = async (filters?: SearchFilters) => {
     try {
@@ -46,6 +53,15 @@ const Vehicles = () => {
     fetchVehicles();
   };
 
+  const handleOpenPurchase = (vehicle: Vehicle) => {
+    if (!isAuthenticated) {
+      toast.error("Please login to purchase vehicles.");
+      return;
+    }
+    setPurchaseVehicleItem(vehicle);
+    setIsPurchaseOpen(true);
+  };
+
   return (
     <div className="space-y-8 py-4">
       {/* Header */}
@@ -53,7 +69,7 @@ const Vehicles = () => {
         <div>
           <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">Explore Vehicles</h1>
           <p className="text-sm text-slate-500 mt-1">
-            Browse our full dealership inventory of verified vehicles
+            Browse our full dealership inventory of verified vehicles in Indian Rupees (₹)
           </p>
         </div>
         <button
@@ -147,19 +163,35 @@ const Vehicles = () => {
                 <div>
                   <span className="text-xs text-slate-400 font-semibold block uppercase">Price</span>
                   <span className="text-2xl font-extrabold text-[#8948E5]">
-                    ${vehicle.price?.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    ₹{vehicle.price?.toLocaleString('en-IN')}
                   </span>
                 </div>
 
-                <div className="flex items-center space-x-1 text-xs text-emerald-600 font-bold bg-emerald-50 px-2.5 py-1 rounded-lg">
-                  <CheckCircle2 className="w-3.5 h-3.5" />
-                  <span>Verified</span>
-                </div>
+                {/* Purchase Action Button */}
+                <button
+                  onClick={() => handleOpenPurchase(vehicle)}
+                  disabled={vehicle.quantity <= 0}
+                  className="inline-flex items-center px-4 py-2.5 rounded-xl text-xs font-bold text-white bg-[#8948E5] hover:bg-[#7637d4] shadow-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                >
+                  <ShoppingBag className="w-4 h-4 mr-1.5" />
+                  <span>Purchase</span>
+                </button>
               </div>
             </div>
           ))}
         </div>
       )}
+
+      {/* Purchase Modal */}
+      <PurchaseModal
+        vehicle={purchaseVehicleItem}
+        isOpen={isPurchaseOpen}
+        onClose={() => {
+          setIsPurchaseOpen(false);
+          setPurchaseVehicleItem(null);
+        }}
+        onSuccess={() => fetchVehicles(activeFilters || undefined)}
+      />
     </div>
   );
 };

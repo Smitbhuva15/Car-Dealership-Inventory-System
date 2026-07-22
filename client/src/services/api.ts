@@ -242,6 +242,36 @@ export const restockVehicle = async (id: string, quantity: number): Promise<{ me
   return responseData;
 };
 
+export const purchaseVehicle = async (id: string, quantity: number): Promise<{ message: string; vehicle?: Vehicle }> => {
+  let response = await fetch(`/api/vehicles/purchase/${id}`, {
+    method: 'POST',
+    credentials: 'include',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ quantity }),
+  });
+
+  if (response.status === 404) {
+    response = await fetch(`/api/vehicles/${id}/purchase`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ quantity }),
+    });
+  }
+
+  const responseData = await response.json();
+
+  if (!response.ok) {
+    throw new Error(responseData.error || responseData.message || 'Failed to purchase vehicle.');
+  }
+
+  return responseData;
+};
+
 export const searchVehiclesApi = async (filters: SearchFilters): Promise<Vehicle[]> => {
   const queryParams = new URLSearchParams();
 

@@ -2,19 +2,23 @@ import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Plus, Edit2, Trash2, PackagePlus, Car, AlertCircle, RefreshCw } from "lucide-react";
 import toast from "react-hot-toast";
-import { getAllVehicles, deleteVehicle, searchVehiclesApi, type Vehicle, type SearchFilters } from "../services/api";
+import { getAllVehicles, searchVehiclesApi, type Vehicle, type SearchFilters } from "../services/api";
 import RestockModal from "../components/RestockModal";
+import DeleteConfirmModal from "../components/DeleteConfirmModal";
 import AdvancedSearchFilter from "../components/AdvancedSearchFilter";
 
 const AdminDashboard = () => {
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
-  const [deletingId, setDeletingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   // Restock modal state
   const [restockVehicleItem, setRestockVehicleItem] = useState<Vehicle | null>(null);
   const [isRestockOpen, setIsRestockOpen] = useState<boolean>(false);
+
+  // Delete modal state
+  const [deleteVehicleItem, setDeleteVehicleItem] = useState<Vehicle | null>(null);
+  const [isDeleteOpen, setIsDeleteOpen] = useState<boolean>(false);
 
   // Active filters state
   const [activeFilters, setActiveFilters] = useState<SearchFilters | null>(null);
@@ -55,21 +59,9 @@ const AdminDashboard = () => {
     fetchVehicles();
   };
 
-  const handleDelete = async (id: string, make: string, model: string) => {
-    if (!window.confirm(`Are you sure you want to delete ${make} ${model}?`)) {
-      return;
-    }
-
-    try {
-      setDeletingId(id);
-      const res = await deleteVehicle(id);
-      toast.success(res.message || "Vehicle deleted successfully!");
-      setVehicles((prev) => prev.filter((v) => v._id !== id));
-    } catch (err: any) {
-      toast.error(err.message || "Failed to delete vehicle.");
-    } finally {
-      setDeletingId(null);
-    }
+  const handleOpenDelete = (vehicle: Vehicle) => {
+    setDeleteVehicleItem(vehicle);
+    setIsDeleteOpen(true);
   };
 
   const handleOpenRestock = (vehicle: Vehicle) => {
@@ -84,7 +76,7 @@ const AdminDashboard = () => {
         <div>
           <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">Admin Dashboard</h1>
           <p className="text-sm text-slate-500 mt-1">
-            Manage your dealership vehicle listings, stock restock, and pricing
+            Manage your dealership vehicle listings, stock restock, and pricing in Indian Rupees (₹)
           </p>
         </div>
         <div className="flex items-center space-x-3">
@@ -169,7 +161,7 @@ const AdminDashboard = () => {
                 <tr className="bg-slate-50 border-b border-slate-200 text-xs font-bold uppercase tracking-wider text-slate-500">
                   <th className="py-4 px-6">Vehicle</th>
                   <th className="py-4 px-6">Category</th>
-                  <th className="py-4 px-6">Price</th>
+                  <th className="py-4 px-6">Price (₹)</th>
                   <th className="py-4 px-6">Stock Quantity</th>
                   <th className="py-4 px-6 text-right">Actions</th>
                 </tr>
@@ -202,7 +194,7 @@ const AdminDashboard = () => {
                     {/* Price */}
                     <td className="py-4 px-6">
                       <span className="font-extrabold text-slate-900">
-                        ${vehicle.price?.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        ₹{vehicle.price?.toLocaleString('en-IN')}
                       </span>
                     </td>
 
@@ -242,16 +234,11 @@ const AdminDashboard = () => {
 
                       {/* Delete Button */}
                       <button
-                        onClick={() => handleDelete(vehicle._id, vehicle.make, vehicle.model)}
-                        disabled={deletingId === vehicle._id}
-                        className="inline-flex items-center p-2 rounded-xl text-slate-600 hover:text-red-600 hover:bg-red-50 transition-colors disabled:opacity-50"
+                        onClick={() => handleOpenDelete(vehicle)}
+                        className="inline-flex items-center p-2 rounded-xl text-slate-600 hover:text-red-600 hover:bg-red-50 transition-colors"
                         title="Delete Vehicle"
                       >
-                        {deletingId === vehicle._id ? (
-                          <div className="w-4 h-4 border-2 border-red-600 border-t-transparent rounded-full animate-spin" />
-                        ) : (
-                          <Trash2 className="w-4 h-4" />
-                        )}
+                        <Trash2 className="w-4 h-4" />
                       </button>
                     </td>
                   </tr>
@@ -269,6 +256,17 @@ const AdminDashboard = () => {
         onClose={() => {
           setIsRestockOpen(false);
           setRestockVehicleItem(null);
+        }}
+        onSuccess={() => fetchVehicles(activeFilters || undefined)}
+      />
+
+      {/* Delete Confirmation Modal */}
+      <DeleteConfirmModal
+        vehicle={deleteVehicleItem}
+        isOpen={isDeleteOpen}
+        onClose={() => {
+          setIsDeleteOpen(false);
+          setDeleteVehicleItem(null);
         }}
         onSuccess={() => fetchVehicles(activeFilters || undefined)}
       />

@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Search, Filter, RotateCcw, DollarSign, Tag, Layers, ChevronDown, ChevronUp } from "lucide-react";
+import { Search, Filter, RotateCcw, Tag, Layers, ChevronDown, ChevronUp } from "lucide-react";
 import type { SearchFilters } from "../services/api";
 
 
@@ -163,11 +163,11 @@ const AdvancedSearchFilter: React.FC<AdvancedSearchFilterProps> = ({
           {/* Min Price Filter */}
           <div className="space-y-1">
             <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-600">
-              Min Price ($)
+              Min Price (₹)
             </label>
             <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
-                <DollarSign className="w-4 h-4" />
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400 font-bold text-xs">
+                ₹
               </div>
               <input
                 type="number"
@@ -175,7 +175,7 @@ const AdvancedSearchFilter: React.FC<AdvancedSearchFilterProps> = ({
                 min="0"
                 value={filters.minPrice !== undefined ? filters.minPrice : ""}
                 onChange={handleChange}
-                placeholder="Min Price"
+                placeholder="Min Price (₹)"
                 className="w-full pl-9 pr-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-xs focus:outline-none focus:border-[#8948E5] transition-all"
               />
             </div>
@@ -184,11 +184,11 @@ const AdvancedSearchFilter: React.FC<AdvancedSearchFilterProps> = ({
           {/* Max Price Filter */}
           <div className="space-y-1">
             <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-600">
-              Max Price ($)
+              Max Price (₹)
             </label>
             <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
-                <DollarSign className="w-4 h-4" />
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400 font-bold text-xs">
+                ₹
               </div>
               <input
                 type="number"
@@ -196,7 +196,7 @@ const AdvancedSearchFilter: React.FC<AdvancedSearchFilterProps> = ({
                 min="0"
                 value={filters.maxPrice !== undefined ? filters.maxPrice : ""}
                 onChange={handleChange}
-                placeholder="Max Price"
+                placeholder="Max Price (₹)"
                 className="w-full pl-9 pr-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-xs focus:outline-none focus:border-[#8948E5] transition-all"
               />
             </div>
