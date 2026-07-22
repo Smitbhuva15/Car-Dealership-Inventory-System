@@ -22,11 +22,23 @@ export const searchVehicles = async (filters: any) => {
       query.price = {};
 
       if (minPrice !== undefined) {
-        query.price.$gte = Number(minPrice);
+        const parsedMinPrice = Number(minPrice);
+
+        if (isNaN(parsedMinPrice)) {
+          throw new Error("Min price must be a valid number.");
+        }
+
+        query.price.$gte = parsedMinPrice;
       }
 
       if (maxPrice !== undefined) {
-        query.price.$lte = Number(maxPrice);
+        const parsedMaxPrice = Number(maxPrice);
+
+        if (isNaN(parsedMaxPrice)) {
+          throw new Error("Max price must be a valid number.");
+        }
+
+        query.price.$lte = parsedMaxPrice;
       }
     }
 
