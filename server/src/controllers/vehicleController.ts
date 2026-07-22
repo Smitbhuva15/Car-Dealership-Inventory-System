@@ -6,6 +6,7 @@ import { deleteVehicle } from "../services/deleteVehicle";
 import { restockVehicle } from "../services/restockVehicle";
 import { viewAllVehicles } from "../services/viewAllVehicles";
 import { searchVehicles } from "../services/searchVehicles";
+import { purchaseVehicle } from "../services/purchaseVehicle";
 
 
 export const addVehicleController = async (req: Request, res: Response) => {
@@ -126,11 +127,39 @@ export const searchVehicleController = async (
 
     return res.status(200).json(vehicles);
   } catch (error: any) {
-    console.error(error);
-
     if (
       error.message === "Min price must be a valid number." ||
       error.message === "Max price must be a valid number."
+    ) {
+      return res.status(400).json({
+        error: error.message,
+      });
+    }
+
+    return res.status(500).json({
+      message: "Internal Server Error.",
+      error: "Something went wrong. Please try again later.",
+    });
+  }
+};
+
+export const purchaseVehicleController = async (
+  req: Request,
+  res: Response
+) => {
+  try {
+    const { quantity } = req.body;
+
+    const result = await purchaseVehicle(req.params.id as string, quantity);
+
+    return res.status(200).json(result);
+  } catch (error: any) {
+
+    if (
+      error.message === "Invalid vehicle ID." ||
+      error.message === "Quantity must be a positive integer." ||
+      error.message === "Vehicle not found." ||
+      error.message.startsWith("Insufficient stock.")
     ) {
       return res.status(400).json({
         error: error.message,
