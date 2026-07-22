@@ -63,6 +63,50 @@ describe("addVehicle", () => {
     );
   });
 
+  it("should throw error when price is negative", async () => {
+    await expect(
+      addVehicle({
+        ...vehicleData,
+        price: -1,
+      })
+    ).rejects.toThrow(
+      "Price must be a number and must be greater than or equal to 0."
+    );
+  });
+
+  it("should throw error when price is not a number", async () => {
+    await expect(
+      addVehicle({
+        ...vehicleData,
+        price: "100",
+      })
+    ).rejects.toThrow(
+      "Price must be a number and must be greater than or equal to 0."
+    );
+  });
+
+  it("should throw error when quantity is negative", async () => {
+    await expect(
+      addVehicle({
+        ...vehicleData,
+        quantity: -1,
+      })
+    ).rejects.toThrow(
+      "Quantity must be a non-negative integer."
+    );
+  });
+
+  it("should throw error when quantity is not an integer", async () => {
+    await expect(
+      addVehicle({
+        ...vehicleData,
+        quantity: 1.5,
+      })
+    ).rejects.toThrow(
+      "Quantity must be a non-negative integer."
+    );
+  });
+
 
 
 });
