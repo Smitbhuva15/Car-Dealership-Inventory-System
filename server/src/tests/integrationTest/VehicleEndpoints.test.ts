@@ -579,3 +579,95 @@ describe("POST /api/vehicles/restock/:id", () => {
     expect(res.statusCode).toBe(403);
   });
 });
+
+describe("GET /api/vehicles/view-all", () => {
+  let token: string;
+
+  beforeEach(async () => {
+
+    const user = await User.create({
+      name: "Test User",
+      email: "user@example.com",
+      password: "Password123",
+      role: "user",
+    });
+
+    token = jwt.sign(
+      {
+        id: user._id,
+        email: user.email,
+        role: user.role,
+      },
+      process.env.JWT_SECRET!
+    );
+  });
+
+  test("should return all vehicles", async () => {
+    await Vehicle.create([
+      {
+        make: "Toyota",
+        model: "Fortuner",
+        category: "SUV",
+        price: 4500000,
+        quantity: 5,
+      },
+      {
+        make: "Honda",
+        model: "City",
+        category: "Sedan",
+        price: 1500000,
+        quantity: 10,
+      },
+    ]);
+
+    const res = await request(app)
+      .get("/api/vehicles/view-all")
+      .set("Cookie", [`token=${token}`]);
+
+    expect(res.statusCode).toBe(200);
+    expect(res.body).toHaveLength(2);
+
+    expect(res.body[0]).toEqual(
+      expect.objectContaining({
+        make: "Toyota",
+        model: "Fortuner",
+        category: "SUV",
+        price: 4500000,
+        quantity: 5,
+      })
+    );
+
+    expect(res.body[1]).toEqual(
+      expect.objectContaining({
+        make: "Honda",
+        model: "City",
+        category: "Sedan",
+        price: 1500000,
+        quantity: 10,
+      })
+    );
+  });
+
+  test("should return an empty array when no vehicles exist", async () => {
+    const res = await request(app)
+      .get("/api/vehicles/view-all")
+      .set("Cookie", [`token=${token}`]);
+
+    expect(res.statusCode).toBe(200);
+    expect(res.body).toEqual([]);
+  });
+
+  test("should return 401 when token is missing", async () => {
+    const res = await request(app).get("/api/vehicles/view-all");
+
+    expect(res.statusCode).toBe(401);
+  });
+
+  test("should return 401 when token is invalid", async () => {
+    const res = await request(app)
+      .get("/api/vehicles/view-all")
+      .set("Cookie", ["token=invalid-token"]);
+
+    expect(res.statusCode).toBe(401);
+  });
+});
