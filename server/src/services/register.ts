@@ -30,6 +30,9 @@ export const register = async (userData: any) => {
     // Check if email already exists
     const existingUser = await User.findOne({ email });
 
+    if (existingUser) {
+      throw new Error("Email already registered.");
+    }
 
     // Hash password
     const salt = await bcrypt.genSalt(10);
