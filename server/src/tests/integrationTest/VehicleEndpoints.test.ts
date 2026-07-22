@@ -243,3 +243,131 @@ describe("PUT /api/vehicles/update/:id", () => {
 });
 
 
+describe("DELETE /api/vehicles/delete/:id", () => {
+  let token: string;
+
+  beforeEach(async () => {
+    const admin = await User.create({
+      name: "Admin",
+      email: "admin@example.com",
+      password: "Password123",
+      role: "admin",
+    });
+
+    token = jwt.sign(
+      {
+        id: admin._id,
+        email: admin.email,
+        role: admin.role,
+      },
+      process.env.JWT_SECRET!
+    );
+  });
+
+  test("should delete a vehicle successfully", async () => {
+    const vehicle = await Vehicle.create({
+      make: "Toyota",
+      model: "Fortuner",
+      category: "SUV",
+      price: 4500000,
+      quantity: 5,
+    });
+
+    const res = await request(app)
+      .delete(`/api/vehicles/delete/${vehicle._id}`)
+      .set("Cookie", [`token=${token}`]);
+
+    expect(res.statusCode).toBe(200);
+    expect(res.body).toEqual({
+      message: "Vehicle deleted successfully.",
+    });
+
+    const deletedVehicle = await Vehicle.findById(vehicle._id);
+    expect(deletedVehicle).toBeNull();
+  });
+
+  test("should return 400 for invalid vehicle id", async () => {
+    const res = await request(app)
+      .delete("/api/vehicles/delete/invalid-id")
+      .set("Cookie", [`token=${token}`]);
+
+    expect(res.statusCode).toBe(400);
+    expect(res.body.error).toBe("Invalid vehicle ID.");
+  });
+
+  test("should return 400 when vehicle is not found", async () => {
+    const id = new mongoose.Types.ObjectId();
+
+    const res = await request(app)
+      .delete(`/api/vehicles/delete/${id}`)
+      .set("Cookie", [`token=${token}`]);
+
+    expect(res.statusCode).toBe(400);
+    expect(res.body.error).toBe("Vehicle not found.");
+  });
+
+  test("should return 401 when token is missing", async () => {
+    const vehicle = await Vehicle.create({
+      make: "Toyota",
+      model: "Fortuner",
+      category: "SUV",
+      price: 4500000,
+      quantity: 5,
+    });
+
+    const res = await request(app).delete(
+      `/api/vehicles/delete/${vehicle._id}`
+    );
+
+    expect(res.statusCode).toBe(401);
+  });
+
+  test("should return 401 for invalid token", async () => {
+    const vehicle = await Vehicle.create({
+      make: "Toyota",
+      model: "Fortuner",
+      category: "SUV",
+      price: 4500000,
+      quantity: 5,
+    });
+
+    const res = await request(app)
+      .delete(`/api/vehicles/delete/${vehicle._id}`)
+      .set("Cookie", ["token=invalid-token"]);
+
+    expect(res.statusCode).toBe(401);
+  });
+
+  test("should return 403 when user is not admin", async () => {
+    const user = await User.create({
+      name: "User",
+      email: "user@example.com",
+      password: "Password123",
+      role: "user",
+    });
+
+    const userToken = jwt.sign(
+      {
+        id: user._id,
+        email: user.email,
+        role: user.role,
+      },
+      process.env.JWT_SECRET!
+    );
+
+    const vehicle = await Vehicle.create({
+      make: "Toyota",
+      model: "Fortuner",
+      category: "SUV",
+      price: 4500000,
+      quantity: 5,
+    });
+
+    const res = await request(app)
+      .delete(`/api/vehicles/delete/${vehicle._id}`)
+      .set("Cookie", [`token=${userToken}`]);
+
+    expect(res.statusCode).toBe(403);
+  });
+});
+
