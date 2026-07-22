@@ -3,6 +3,7 @@ import { Request, Response } from "express";
 import { addVehicle } from "../services/addVehicle";
 import { updateVehicle } from "../services/updateVehicle";
 import { deleteVehicle } from "../services/deleteVehicle";
+import { restockVehicle } from "../services/restockVehicle";
 
 
 export const addVehicleController = async (req: Request, res: Response) => {
@@ -77,6 +78,36 @@ export const deleteVehicleController = async (req: Request, res: Response) => {
 
     if (
       error.message === "Invalid vehicle ID." ||
+      error.message === "Vehicle not found."
+    ) {
+      return res.status(400).json({
+        error: error.message,
+      });
+    }
+
+    return res.status(500).json({
+      message: "Internal Server Error.",
+      error: "Something went wrong. Please try again later.",
+    });
+  }
+};
+
+export const restockVehicleController = async (
+  req: Request,
+  res: Response
+) => {
+  try {
+    const { quantity } = req.body;
+
+    const result = await restockVehicle(req.params.id as string, quantity);
+
+    return res.status(200).json(result);
+  } catch (error: any) {
+    console.error(error);
+
+    if (
+      error.message === "Invalid vehicle ID." ||
+      error.message === "Quantity must be a positive integer." ||
       error.message === "Vehicle not found."
     ) {
       return res.status(400).json({
