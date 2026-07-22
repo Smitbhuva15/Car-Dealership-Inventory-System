@@ -1,11 +1,9 @@
 import bcrypt from "bcrypt";
-import jwt from "jsonwebtoken";
 import mongoose from "mongoose";
 import { User } from "../../model/User";
 import { register } from "../../services/register";
 
 jest.mock("bcrypt");
-jest.mock("jsonwebtoken");
 
 describe("register service", () => {
     const userId = new mongoose.Types.ObjectId();
@@ -13,8 +11,6 @@ describe("register service", () => {
     beforeEach(() => {
         jest.restoreAllMocks();
         jest.clearAllMocks();
-
-        process.env.JWT_SECRET = "test-secret";
     });
 
     it("should register user successfully", async () => {
@@ -30,8 +26,6 @@ describe("register service", () => {
             password: "hashedPassword",
             role: "user",
         } as never);
-
-        (jwt.sign as jest.Mock).mockReturnValue("jwt-token");
 
         const result = await register({
             name: "John",
@@ -50,26 +44,11 @@ describe("register service", () => {
             "salt"
         );
 
-        expect(jwt.sign).toHaveBeenCalledWith(
-            {
-                id: userId.toString(),
-                email: "john@example.com",
-                role: "user",
-            },
-            "test-secret",
-            {
-                expiresIn: "1d",
-            }
-        );
-
-        expect(result).toEqual({
-            user: {
-                id: userId,
-                name: "John",
-                email: "john@example.com",
-                role: "user",
-            },
-            token: "jwt-token",
+        expect(result.user).toEqual({
+            id: userId,
+            name: "John",
+            email: "john@example.com",
+            role: "user",
         });
 
     });
@@ -86,7 +65,6 @@ describe("register service", () => {
     });
 
     it("should throw when name is not a string", async () => {
-
         await expect(
             register({
                 name: 123,
@@ -188,5 +166,4 @@ describe("register service", () => {
             })
         ).rejects.toThrow("Hash error");
     });
-
 });
