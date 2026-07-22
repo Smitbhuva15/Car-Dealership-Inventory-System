@@ -64,14 +64,14 @@ describe("register service", () => {
 
         expect(result).toEqual({
             user: {
-                _id: userId,
+                id: userId,
                 name: "John",
                 email: "john@example.com",
-                password: "hashedPassword",
                 role: "user",
             },
             token: "jwt-token",
         });
+
     });
 
     it("should throw when name is missing", async () => {

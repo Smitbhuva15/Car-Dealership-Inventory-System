@@ -61,7 +61,12 @@ export const register = async (userData: any) => {
     );
 
     return {
-      user: savedUser,
+       user: {
+        id: savedUser._id,
+        name: savedUser.name,
+        email: savedUser.email,
+        role: savedUser.role,
+      },
       token,
     };
   } catch (error: any) {
