@@ -144,5 +144,49 @@ describe("register service", () => {
         );
     });
 
+    it("should throw when email already exists", async () => {
+        jest.spyOn(User, "findOne").mockResolvedValue({} as never);
+
+        await expect(
+            register({
+                name: "John",
+                email: "john@example.com",
+                password: "password123",
+            })
+        ).rejects.toThrow("Email already registered.");
+    });
+
+    it("should throw when bcrypt.genSalt fails", async () => {
+        jest.spyOn(User, "findOne").mockResolvedValue(null as never);
+
+        (bcrypt.genSalt as jest.Mock).mockRejectedValue(
+            new Error("Salt error")
+        );
+
+        await expect(
+            register({
+                name: "John",
+                email: "john@example.com",
+                password: "password123",
+            })
+        ).rejects.toThrow("Salt error");
+    });
+
+    it("should throw when bcrypt.hash fails", async () => {
+        jest.spyOn(User, "findOne").mockResolvedValue(null as never);
+
+        (bcrypt.genSalt as jest.Mock).mockResolvedValue("salt");
+        (bcrypt.hash as jest.Mock).mockRejectedValue(
+            new Error("Hash error")
+        );
+
+        await expect(
+            register({
+                name: "John",
+                email: "john@example.com",
+                password: "password123",
+            })
+        ).rejects.toThrow("Hash error");
+    });
 
 });
