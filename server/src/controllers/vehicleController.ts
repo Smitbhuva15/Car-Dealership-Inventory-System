@@ -2,6 +2,7 @@
 import { Request, Response } from "express";
 import { addVehicle } from "../services/addVehicle";
 import { updateVehicle } from "../services/updateVehicle";
+import { deleteVehicle } from "../services/deleteVehicle";
 
 
 export const addVehicleController = async (req: Request, res: Response) => {
@@ -13,7 +14,6 @@ export const addVehicleController = async (req: Request, res: Response) => {
       data: vehicle,
     });
   } catch (error: any) {
-    console.error(error);
 
     if (error.name === "ValidationError") {
       return res.status(400).json({
@@ -63,6 +63,30 @@ export const updateVehicleController = async (
 
     return res.status(500).json({
       error: "Internal Server Error.",
+    });
+  }
+};
+
+export const deleteVehicleController = async (req: Request, res: Response) => {
+  try {
+    const result = await deleteVehicle(req.params.id as string);
+
+    return res.status(200).json(result);
+  } catch (error: any) {
+
+
+    if (
+      error.message === "Invalid vehicle ID." ||
+      error.message === "Vehicle not found."
+    ) {
+      return res.status(400).json({
+        error: error.message,
+      });
+    }
+
+    return res.status(500).json({
+      message: "Internal Server Error.",
+      error: "Something went wrong. Please try again later.",
     });
   }
 };
