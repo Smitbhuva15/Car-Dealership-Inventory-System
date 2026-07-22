@@ -41,6 +41,17 @@ describe("addVehicle", () => {
     );
   });
 
+  it("should throw error when make is not a string", async () => {
+    await expect(
+      addVehicle({
+        ...vehicleData,
+        make: 123,
+      })
+    ).rejects.toThrow(
+      "Make is required and must be a non-empty string."
+    );
+  });
+
   it("should throw error when model is missing", async () => {
     await expect(
       addVehicle({
@@ -52,11 +63,33 @@ describe("addVehicle", () => {
     );
   });
 
+  it("should throw error when model is not a string", async () => {
+    await expect(
+      addVehicle({
+        ...vehicleData,
+        model: 123,
+      })
+    ).rejects.toThrow(
+      "Model is required and must be a non-empty string."
+    );
+  });
+
   it("should throw error when category is missing", async () => {
     await expect(
       addVehicle({
         ...vehicleData,
         category: "",
+      })
+    ).rejects.toThrow(
+      "Category is required and must be a non-empty string."
+    );
+  });
+
+  it("should throw error when category is not a string", async () => {
+    await expect(
+      addVehicle({
+        ...vehicleData,
+        category: 123,
       })
     ).rejects.toThrow(
       "Category is required and must be a non-empty string."
@@ -107,6 +140,14 @@ describe("addVehicle", () => {
     );
   });
 
+  it("should rethrow database save error", async () => {
+    jest
+      .spyOn(Vehicle.prototype, "save")
+      .mockRejectedValue(new Error("Database error"));
 
+    await expect(addVehicle(vehicleData)).rejects.toThrow(
+      "Database error"
+    );
+  });
 
 });
