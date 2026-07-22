@@ -4,6 +4,7 @@ import { addVehicle } from "../services/addVehicle";
 import { updateVehicle } from "../services/updateVehicle";
 import { deleteVehicle } from "../services/deleteVehicle";
 import { restockVehicle } from "../services/restockVehicle";
+import { viewAllVehicles } from "../services/viewAllVehicles";
 
 
 export const addVehicleController = async (req: Request, res: Response) => {
@@ -32,6 +33,23 @@ export const addVehicleController = async (req: Request, res: Response) => {
         error: error.message,
       });
     }
+
+    return res.status(500).json({
+      message: "Internal Server Error.",
+      error: "Something went wrong. Please try again later.",
+    });
+  }
+};
+
+export const viewAllVehiclesController = async (
+  req: Request,
+  res: Response
+) => {
+  try {
+    const vehicles = await viewAllVehicles();
+
+    return res.status(200).json(vehicles);
+  } catch (error: any) {
 
     return res.status(500).json({
       message: "Internal Server Error.",
