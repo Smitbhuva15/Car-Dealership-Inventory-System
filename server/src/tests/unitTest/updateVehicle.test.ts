@@ -76,11 +76,13 @@ describe("updateVehicle service", () => {
     });
 
     it("should throw error for invalid ObjectId", async () => {
+        const findByIdSpy = jest.spyOn(Vehicle, "findById");
+
         await expect(
             updateVehicle("invalid-id", {})
         ).rejects.toThrow("Invalid vehicle ID.");
 
-        expect(Vehicle.findById).not.toHaveBeenCalled();
+        expect(findByIdSpy).not.toHaveBeenCalled();
     });
 
     it("should throw error when vehicle does not exist", async () => {
