@@ -6,7 +6,9 @@ function App() {
 
   return (
     <>
-       vehicles
+       <div className='bg'>
+        hello
+       </div>
     </>
   )
 }
