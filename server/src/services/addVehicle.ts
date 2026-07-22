@@ -1,6 +1,36 @@
 import { IVehicle, Vehicle } from "../model/Vehicle";
 
-export const addVehicle = async (vehicleData: IVehicle) => {
-  const vehicle = new Vehicle(vehicleData);
-  return await vehicle.save();
+export const addVehicle = async (vehicleData: any) => {
+
+    const { make, model, category, price, quantity } = vehicleData;
+
+   try {
+    // Basic validation
+    if (!make || typeof make !== 'string') {
+      throw new Error('Make is required and must be a non-empty string.');
+    }
+
+    if (!model || typeof model !== 'string') {
+      throw new Error('Model is required and must be a non-empty string.');
+    }
+
+    if (!category || typeof category !== 'string') {
+      throw new Error('Category is required and must be a non-empty string.');
+    }
+
+    // Create vehicle
+    const vehicle = new Vehicle({
+      make: make,
+      model: model,
+      category: category,
+      price,
+      quantity
+    });
+
+    const savedVehicle = await vehicle.save();
+    return savedVehicle;
+
+  } catch (error: any) {
+    throw new Error(error.message);
+  }
 };
