@@ -112,4 +112,38 @@ describe("searchVehicles service", () => {
         });
     });
 
+    it("should throw error when minPrice is invalid", async () => {
+        jest.spyOn(Vehicle, "find").mockResolvedValue([] as never);
+
+        await expect(
+            searchVehicles({
+                minPrice: "abc",
+            })
+        ).rejects.toThrow("Min price must be a valid number.");
+
+        expect(Vehicle.find).not.toHaveBeenCalled();
+    });
+
+    it("should throw error when maxPrice is invalid", async () => {
+        jest.spyOn(Vehicle, "find").mockResolvedValue([] as never);
+
+        await expect(
+            searchVehicles({
+                maxPrice: "xyz",
+            })
+        ).rejects.toThrow("Max price must be a valid number.");
+
+        expect(Vehicle.find).not.toHaveBeenCalled();
+    });
+
+    it("should throw database error when Vehicle.find fails", async () => {
+        jest
+            .spyOn(Vehicle, "find")
+            .mockRejectedValue(new Error("Database error"));
+
+        await expect(searchVehicles({})).rejects.toThrow("Database error");
+
+        expect(Vehicle.find).toHaveBeenCalledWith({});
+    });
+
 });
