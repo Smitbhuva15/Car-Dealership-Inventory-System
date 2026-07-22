@@ -838,3 +838,199 @@ describe("GET /api/vehicles/search", () => {
     expect(res.statusCode).toBe(401);
   });
 });
+
+describe("POST /api/vehicles/purchase/:id", () => {
+  let token: string;
+  
+  beforeEach(async () => {
+    const user = await User.create({
+      name: "Test User",
+      email: "user@example.com",
+      password: "Password123",
+      role: "user",
+    });
+
+    token = jwt.sign(
+      {
+        id: user._id,
+        email: user.email,
+        role: user.role,
+      },
+      process.env.JWT_SECRET!
+    );
+  });
+
+  test("should purchase vehicle successfully", async () => {
+    const vehicle = await Vehicle.create({
+      make: "Toyota",
+      model: "Fortuner",
+      category: "SUV",
+      price: 4500000,
+      quantity: 10,
+    });
+
+    const res = await request(app)
+      .post(`/api/vehicles/purchase/${vehicle._id}`)
+      .set("Cookie", [`token=${token}`])
+      .send({
+        quantity: 3,
+      });
+
+    expect(res.statusCode).toBe(200);
+
+    expect(res.body).toEqual({
+      message: "Vehicle purchased successfully.",
+      vehicle: expect.objectContaining({
+        _id: expect.any(String),
+        make: "Toyota",
+        model: "Fortuner",
+        category: "SUV",
+        price: 4500000,
+        quantity: 7,
+      }),
+    });
+  });
+
+  test("should return 400 for invalid vehicle id", async () => {
+    const res = await request(app)
+      .post("/api/vehicles/purchase/invalid-id")
+      .set("Cookie", [`token=${token}`])
+      .send({
+        quantity: 2,
+      });
+
+    expect(res.statusCode).toBe(400);
+    expect(res.body.error).toBe("Invalid vehicle ID.");
+  });
+
+  test("should return 400 when vehicle is not found", async () => {
+    const id = new mongoose.Types.ObjectId();
+
+    const res = await request(app)
+      .post(`/api/vehicles/purchase/${id}`)
+      .set("Cookie", [`token=${token}`])
+      .send({
+        quantity: 2,
+      });
+
+    expect(res.statusCode).toBe(400);
+    expect(res.body.error).toBe("Vehicle not found.");
+  });
+
+  test("should return 400 when quantity is missing", async () => {
+    const vehicle = await Vehicle.create({
+      make: "Toyota",
+      model: "Fortuner",
+      category: "SUV",
+      price: 4500000,
+      quantity: 10,
+    });
+
+    const res = await request(app)
+      .post(`/api/vehicles/purchase/${vehicle._id}`)
+      .set("Cookie", [`token=${token}`])
+      .send({});
+
+    expect(res.statusCode).toBe(400);
+    expect(res.body.error).toBe("Quantity must be a positive integer.");
+  });
+
+  test("should return 400 when quantity is negative", async () => {
+    const vehicle = await Vehicle.create({
+      make: "Toyota",
+      model: "Fortuner",
+      category: "SUV",
+      price: 4500000,
+      quantity: 10,
+    });
+
+    const res = await request(app)
+      .post(`/api/vehicles/purchase/${vehicle._id}`)
+      .set("Cookie", [`token=${token}`])
+      .send({
+        quantity: -5,
+      });
+
+    expect(res.statusCode).toBe(400);
+    expect(res.body.error).toBe("Quantity must be a positive integer.");
+  });
+
+  test("should return 400 when quantity is not an integer", async () => {
+    const vehicle = await Vehicle.create({
+      make: "Toyota",
+      model: "Fortuner",
+      category: "SUV",
+      price: 4500000,
+      quantity: 10,
+    });
+
+    const res = await request(app)
+      .post(`/api/vehicles/purchase/${vehicle._id}`)
+      .set("Cookie", [`token=${token}`])
+      .send({
+        quantity: 2.5,
+      });
+
+    expect(res.statusCode).toBe(400);
+    expect(res.body.error).toBe("Quantity must be a positive integer.");
+  });
+
+  test("should return 400 when stock is insufficient", async () => {
+    const vehicle = await Vehicle.create({
+      make: "Toyota",
+      model: "Fortuner",
+      category: "SUV",
+      price: 4500000,
+      quantity: 5,
+    });
+
+    const res = await request(app)
+      .post(`/api/vehicles/purchase/${vehicle._id}`)
+      .set("Cookie", [`token=${token}`])
+      .send({
+        quantity: 10,
+      });
+
+    expect(res.statusCode).toBe(400);
+    expect(res.body.error).toBe(
+      "Insufficient stock. Available: 5, Requested: 10"
+    );
+  });
+
+  test("should return 401 when token is missing", async () => {
+    const vehicle = await Vehicle.create({
+      make: "Toyota",
+      model: "Fortuner",
+      category: "SUV",
+      price: 4500000,
+      quantity: 10,
+    });
+
+    const res = await request(app)
+      .post(`/api/vehicles/purchase/${vehicle._id}`)
+      .send({
+        quantity: 2,
+      });
+
+    expect(res.statusCode).toBe(401);
+  });
+
+  test("should return 401 when token is invalid", async () => {
+    const vehicle = await Vehicle.create({
+      make: "Toyota",
+      model: "Fortuner",
+      category: "SUV",
+      price: 4500000,
+      quantity: 10,
+    });
+
+    const res = await request(app)
+      .post(`/api/vehicles/purchase/${vehicle._id}`)
+      .set("Cookie", ["token=invalid-token"])
+      .send({
+        quantity: 2,
+      });
+
+    expect(res.statusCode).toBe(401);
+  });
+});
