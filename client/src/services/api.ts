@@ -12,8 +12,18 @@ export interface RegisterPayload {
   password: string;
 }
 
+export interface LoginPayload {
+  email: string;
+  password: string;
+}
 
 export interface RegisterResponse {
+  message: string;
+  user?: User;
+  error?: string;
+}
+
+export interface LoginResponse {
   message: string;
   user?: User;
   error?: string;
@@ -38,3 +48,21 @@ export const registerUser = async (data: RegisterPayload): Promise<RegisterRespo
   return responseData;
 };
 
+export const loginUser = async (data: LoginPayload): Promise<LoginResponse> => {
+  const response = await fetch('/api/auth/login', {
+    method: 'POST',
+    credentials: 'include',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(data),
+  });
+
+  const responseData = await response.json();
+
+  if (!response.ok) {
+    throw new Error(responseData.error || responseData.message || 'Login failed.');
+  }
+
+  return responseData;
+};
