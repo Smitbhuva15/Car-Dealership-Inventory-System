@@ -671,3 +671,170 @@ describe("GET /api/vehicles/view-all", () => {
     expect(res.statusCode).toBe(401);
   });
 });
+
+describe("GET /api/vehicles/search", () => {
+  let token: string;
+
+  beforeEach(async () => {
+
+    const user = await User.create({
+      name: "Test User",
+      email: "user@example.com",
+      password: "Password123",
+      role: "user",
+    });
+
+    token = jwt.sign(
+      {
+        id: user._id,
+        email: user.email,
+        role: user.role,
+      },
+      process.env.JWT_SECRET!
+    );
+  });
+
+  test("should search vehicles by make", async () => {
+    await Vehicle.create([
+      {
+        make: "Toyota",
+        model: "Fortuner",
+        category: "SUV",
+        price: 4500000,
+        quantity: 5,
+      },
+      {
+        make: "Honda",
+        model: "City",
+        category: "Sedan",
+        price: 1500000,
+        quantity: 10,
+      },
+    ]);
+
+    const res = await request(app)
+      .get("/api/vehicles/search")
+      .query({ make: "Toyota" })
+      .set("Cookie", [`token=${token}`]);
+
+    expect(res.statusCode).toBe(200);
+    expect(res.body).toHaveLength(1);
+    expect(res.body[0]).toEqual(
+      expect.objectContaining({
+        make: "Toyota",
+        model: "Fortuner",
+      })
+    );
+  });
+
+  test("should search vehicles by category", async () => {
+    await Vehicle.create([
+      {
+        make: "Toyota",
+        model: "Fortuner",
+        category: "SUV",
+        price: 4500000,
+        quantity: 5,
+      },
+      {
+        make: "Honda",
+        model: "City",
+        category: "Sedan",
+        price: 1500000,
+        quantity: 10,
+      },
+    ]);
+
+    const res = await request(app)
+      .get("/api/vehicles/search")
+      .query({ category: "SUV" })
+      .set("Cookie", [`token=${token}`]);
+
+    expect(res.statusCode).toBe(200);
+    expect(res.body).toHaveLength(1);
+    expect(res.body[0].category).toBe("SUV");
+  });
+
+  test("should search vehicles by price range", async () => {
+    await Vehicle.create([
+      {
+        make: "Toyota",
+        model: "Fortuner",
+        category: "SUV",
+        price: 4500000,
+        quantity: 5,
+      },
+      {
+        make: "Honda",
+        model: "City",
+        category: "Sedan",
+        price: 1500000,
+        quantity: 10,
+      },
+    ]);
+
+    const res = await request(app)
+      .get("/api/vehicles/search")
+      .query({
+        minPrice: 1000000,
+        maxPrice: 2000000,
+      })
+      .set("Cookie", [`token=${token}`]);
+
+    expect(res.statusCode).toBe(200);
+    expect(res.body).toHaveLength(1);
+    expect(res.body[0].make).toBe("Honda");
+  });
+
+  test("should return 404 when no vehicles match", async () => {
+    await Vehicle.create({
+      make: "Toyota",
+      model: "Fortuner",
+      category: "SUV",
+      price: 4500000,
+      quantity: 5,
+    });
+
+    const res = await request(app)
+      .get("/api/vehicles/search")
+      .query({ make: "BMW" })
+      .set("Cookie", [`token=${token}`]);
+
+    expect(res.statusCode).toBe(404);
+    expect(res.body.error).toBe("No vehicles found.");
+  });
+
+  test("should return 400 for invalid minPrice", async () => {
+    const res = await request(app)
+      .get("/api/vehicles/search")
+      .query({ minPrice: "abc" })
+      .set("Cookie", [`token=${token}`]);
+
+    expect(res.statusCode).toBe(400);
+    expect(res.body.error).toBe("Min price must be a valid number.");
+  });
+
+  test("should return 400 for invalid maxPrice", async () => {
+    const res = await request(app)
+      .get("/api/vehicles/search")
+      .query({ maxPrice: "xyz" })
+      .set("Cookie", [`token=${token}`]);
+
+    expect(res.statusCode).toBe(400);
+    expect(res.body.error).toBe("Max price must be a valid number.");
+  });
+
+  test("should return 401 when token is missing", async () => {
+    const res = await request(app).get("/api/vehicles/search");
+
+    expect(res.statusCode).toBe(401);
+  });
+
+  test("should return 401 when token is invalid", async () => {
+    const res = await request(app)
+      .get("/api/vehicles/search")
+      .set("Cookie", ["token=invalid-token"]);
+
+    expect(res.statusCode).toBe(401);
+  });
+});

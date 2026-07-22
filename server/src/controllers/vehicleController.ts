@@ -155,7 +155,6 @@ export const restockVehicleController = async (
 
     return res.status(200).json(result);
   } catch (error: any) {
-    console.error(error);
 
     if (
       error.message === "Invalid vehicle ID." ||
