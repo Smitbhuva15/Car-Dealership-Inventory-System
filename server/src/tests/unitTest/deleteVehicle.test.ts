@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 import { Vehicle } from "../../model/Vehicle";
-import { deleteVehicle } from "../../services/vehicleService";
+import { deleteVehicle } from "../../services/deleteVehicle";
 
 describe("deleteVehicle service", () => {
   const vehicleId = new mongoose.Types.ObjectId().toString();
