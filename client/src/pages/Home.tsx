@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { Car, ShieldCheck, ArrowRight, CheckCircle2, Sparkles, Database } from "lucide-react";
+import { Car, ShieldCheck, ArrowRight, Database } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 
 const Home = () => {

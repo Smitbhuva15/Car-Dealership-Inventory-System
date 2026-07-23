@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Car, AlertCircle, RefreshCw, CheckCircle2, ShoppingBag } from "lucide-react";
+import { Car, AlertCircle, RefreshCw, ShoppingBag } from "lucide-react";
 import toast from "react-hot-toast";
 import { getAllVehicles, searchVehiclesApi, type Vehicle, type SearchFilters } from "../services/api";
 import { useAuth } from "../context/AuthContext";
