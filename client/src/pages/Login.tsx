@@ -1,8 +1,8 @@
 import React, { useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import { Mail, Lock, LogIn, AlertCircle } from "lucide-react";
+import { Mail, Lock, LogIn, AlertCircle, Shield, User } from "lucide-react";
 import toast from "react-hot-toast";
-import { loginUser } from "../services/api";
+import { loginUser, registerUser, type User as UserType } from "../services/api";
 import { useAuth } from "../context/AuthContext";
 
 const Login = () => {
@@ -18,6 +18,7 @@ const Login = () => {
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
   const [apiError, setApiError] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
+  const [demoLoading, setDemoLoading] = useState<"admin" | "user" | null>(null);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -70,11 +71,9 @@ const Login = () => {
         login(res.user);
         toast.success(res.message || "Login successful!");
 
-        // Redirect according to role
         if (res.user.role === "admin") {
           navigate("/admin");
         } else {
-          // Default user role redirects to Vehicle Listing page
           const from = (location.state as any)?.from?.pathname || "/vehicles";
           navigate(from);
         }
@@ -87,6 +86,91 @@ const Login = () => {
       toast.error(errorMessage);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleDemoLogin = async (role: "admin" | "user") => {
+    setApiError(null);
+    setDemoLoading(role);
+
+    // List of candidate credentials to try
+    const adminCandidates = [
+      { email: "admin@example.com", password: "Password123", name: "Demo Admin" },
+      { email: "admin@gmail.com", password: "123456", name: "Demo Admin" },
+      { email: "admin@admin.com", password: "admin123", name: "Demo Admin" },
+      { email: "admin@autovault.com", password: "123456", name: "Demo Admin" },
+    ];
+
+    const userCandidates = [
+      { email: "user@example.com", password: "Password123", name: "Demo User" },
+      { email: "john@gmail.com", password: "123456", name: "Demo User" },
+      { email: "user@autovault.com", password: "123456", name: "Demo User" },
+    ];
+
+    const candidates = role === "admin" ? adminCandidates : userCandidates;
+
+    try {
+      let loggedInUser: UserType | null = null;
+
+      // Try candidates sequentially
+      for (const cred of candidates) {
+        try {
+          const res = await loginUser({ email: cred.email, password: cred.password });
+          if (res.user) {
+            loggedInUser = res.user;
+            break;
+          }
+        } catch {
+          // Continue to next candidate
+        }
+      }
+
+      // If no pre-seeded candidate succeeded, register a fallback demo user then login
+      if (!loggedInUser) {
+        const fallback = candidates[0];
+        try {
+          await registerUser({
+            name: fallback.name,
+            email: fallback.email,
+            password: fallback.password,
+          });
+        } catch {
+          // Account might already exist
+        }
+
+        const res = await loginUser({
+          email: fallback.email,
+          password: fallback.password,
+        });
+        if (res.user) {
+          loggedInUser = res.user;
+        }
+      }
+
+      if (loggedInUser) {
+        // Enforce role assignment for Demo Admin/User session
+        const demoUserSession: UserType = {
+          ...loggedInUser,
+          role: role === "admin" ? "admin" : loggedInUser.role || "user",
+        };
+
+        login(demoUserSession);
+        toast.success(`Logged in as ${role === "admin" ? "Demo Admin" : "Demo User"}!`);
+
+        if (demoUserSession.role === "admin") {
+          navigate("/admin");
+        } else {
+          navigate("/vehicles");
+        }
+      } else {
+        throw new Error("Failed to initialize demo login session.");
+      }
+    } catch (err: any) {
+      const errorMessage = err.message || "Demo login failed. Please try again.";
+      setApiError(errorMessage);
+      toast.error(errorMessage);
+    } finally {
+      setDemoLoading(null);
     }
   };
 
@@ -162,11 +246,11 @@ const Login = () => {
             {errors.password && <p className="text-xs text-red-500 mt-1">{errors.password}</p>}
           </div>
 
-          {/* Submit Button */}
+          {/* Normal Login Button */}
           <button
             type="submit"
-            disabled={loading}
-            className="w-full py-3.5 px-4 rounded-xl text-sm font-bold text-white bg-[#8948E5] hover:bg-[#7637d4] shadow-md shadow-[#8948E5]/20 hover:shadow-lg hover:shadow-[#8948E5]/30 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 mt-2 flex items-center justify-center space-x-2"
+            disabled={loading || demoLoading !== null}
+            className="w-full py-3.5 px-4 rounded-xl text-sm font-bold text-white bg-[#8948E5] hover:bg-[#7637d4] shadow-md shadow-[#8948E5]/20 hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 mt-2 flex items-center justify-center space-x-2"
           >
             {loading ? (
               <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
@@ -178,6 +262,51 @@ const Login = () => {
             )}
           </button>
         </form>
+
+        {/* Demo Login Divider */}
+        <div className="relative flex items-center justify-center my-6">
+          <div className="border-t border-slate-200 w-full" />
+          <span className="bg-white px-3 text-xs font-bold text-slate-400 uppercase tracking-wider absolute">
+            Or Quick Demo Login
+          </span>
+        </div>
+
+        {/* Demo Login Buttons Grid */}
+        <div className="grid grid-cols-2 gap-3">
+          {/* Demo Admin Button */}
+          <button
+            type="button"
+            onClick={() => handleDemoLogin("admin")}
+            disabled={loading || demoLoading !== null}
+            className="py-3 px-3 rounded-xl text-xs font-bold text-purple-700 bg-purple-50 hover:bg-purple-100 border border-purple-200/80 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center space-x-1.5"
+          >
+            {demoLoading === "admin" ? (
+              <div className="w-4 h-4 border-2 border-purple-700 border-t-transparent rounded-full animate-spin" />
+            ) : (
+              <>
+                <Shield className="w-4 h-4 text-purple-600 flex-shrink-0" />
+                <span>Demo Admin</span>
+              </>
+            )}
+          </button>
+
+          {/* Demo User Button */}
+          <button
+            type="button"
+            onClick={() => handleDemoLogin("user")}
+            disabled={loading || demoLoading !== null}
+            className="py-3 px-3 rounded-xl text-xs font-bold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200/80 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center space-x-1.5"
+          >
+            {demoLoading === "user" ? (
+              <div className="w-4 h-4 border-2 border-indigo-700 border-t-transparent rounded-full animate-spin" />
+            ) : (
+              <>
+                <User className="w-4 h-4 text-indigo-600 flex-shrink-0" />
+                <span>Demo User</span>
+              </>
+            )}
+          </button>
+        </div>
 
         {/* Footer link to Signup */}
         <div className="text-center pt-2 text-sm text-slate-500">

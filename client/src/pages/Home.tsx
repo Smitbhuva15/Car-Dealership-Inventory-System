@@ -23,7 +23,7 @@ const Home = () => {
           </h1>
 
           <p className="text-lg sm:text-xl text-slate-600 font-normal leading-relaxed">
-            AutoVault is a complete inventory management system built to catalog, manage, and track vehicle listings with enterprise security and role-based controls.
+            Car Dealership is a complete inventory management system built to catalog, manage, and track vehicle listings with enterprise security and role-based controls.
           </p>
 
           {/* Call to Action Buttons */}
