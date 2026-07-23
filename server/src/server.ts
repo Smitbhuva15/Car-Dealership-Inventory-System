@@ -5,9 +5,11 @@ import connectDB from './config/db';
 // Load environment variables
 dotenv.config();
 
-// Connect to the database
-connectDB();
+const PORT = Number(process.env.PORT) || 5000;
 
-const PORT = process.env.PORT || 5000;
-
-app.listen(PORT, () => console.log(`Server started on port ${PORT}`));
+connectDB().then(() => {
+  app.listen(PORT, () => console.log(`Server started on ${PORT}`));
+}).catch((error) => {
+  console.error('Failed to start server:', error);
+  process.exit(1);
+});

@@ -1,3 +1,4 @@
+
 export interface User {
   _id?: string;
   id?: string;
@@ -56,9 +57,12 @@ export interface SearchFilters {
   maxPrice?: number | string;
 }
 
+// Base URL for all API calls
+const BASE_URL = (import.meta.env.VITE_API_URL || (import.meta.env.DEV ? 'http://localhost:5000' : '')).replace(/\/$/, '');
+
 // Auth API Calls
 export const registerUser = async (data: RegisterPayload): Promise<RegisterResponse> => {
-  const response = await fetch('/api/auth/register', {
+  const response = await fetch(`${BASE_URL}/api/auth/register`, {
     method: 'POST',
     credentials: 'include',
     headers: {
@@ -77,7 +81,7 @@ export const registerUser = async (data: RegisterPayload): Promise<RegisterRespo
 };
 
 export const loginUser = async (data: LoginPayload): Promise<LoginResponse> => {
-  const response = await fetch('/api/auth/login', {
+  const response = await fetch(`${BASE_URL}/api/auth/login`, {
     method: 'POST',
     credentials: 'include',
     headers: {
@@ -97,13 +101,13 @@ export const loginUser = async (data: LoginPayload): Promise<LoginResponse> => {
 
 // Vehicle API Calls
 export const getAllVehicles = async (): Promise<Vehicle[]> => {
-  let response = await fetch('/api/vehicles/view-all', {
+  let response = await fetch(`${BASE_URL}/api/vehicles/view-all`, {
     method: 'GET',
     credentials: 'include',
   });
 
   if (response.status === 404) {
-    response = await fetch('/api/vehicles', {
+    response = await fetch(`${BASE_URL}/api/vehicles`, {
       method: 'GET',
       credentials: 'include',
     });
@@ -128,7 +132,7 @@ export const getVehicleById = async (id: string): Promise<Vehicle> => {
 };
 
 export const addVehicle = async (data: VehiclePayload): Promise<{ message: string; data?: Vehicle }> => {
-  let response = await fetch('/api/vehicles/add', {
+  let response = await fetch(`${BASE_URL}/api/vehicles/add`, {
     method: 'POST',
     credentials: 'include',
     headers: {
@@ -138,7 +142,7 @@ export const addVehicle = async (data: VehiclePayload): Promise<{ message: strin
   });
 
   if (response.status === 404) {
-    response = await fetch('/api/vehicles', {
+    response = await fetch(`${BASE_URL}/api/vehicles`, {
       method: 'POST',
       credentials: 'include',
       headers: {
@@ -161,7 +165,7 @@ export const updateVehicle = async (
   id: string,
   data: Partial<VehiclePayload>
 ): Promise<{ message: string; vehicle?: Vehicle }> => {
-  let response = await fetch(`/api/vehicles/update/${id}`, {
+  let response = await fetch(`${BASE_URL}/api/vehicles/update/${id}`, {
     method: 'PUT',
     credentials: 'include',
     headers: {
@@ -171,7 +175,7 @@ export const updateVehicle = async (
   });
 
   if (response.status === 404) {
-    response = await fetch(`/api/vehicles/${id}`, {
+    response = await fetch(`${BASE_URL}/api/vehicles/${id}`, {
       method: 'PUT',
       credentials: 'include',
       headers: {
@@ -191,13 +195,13 @@ export const updateVehicle = async (
 };
 
 export const deleteVehicle = async (id: string): Promise<{ message: string }> => {
-  let response = await fetch(`/api/vehicles/delete/${id}`, {
+  let response = await fetch(`${BASE_URL}/api/vehicles/delete/${id}`, {
     method: 'DELETE',
     credentials: 'include',
   });
 
   if (response.status === 404) {
-    response = await fetch(`/api/vehicles/${id}`, {
+    response = await fetch(`${BASE_URL}/api/vehicles/${id}`, {
       method: 'DELETE',
       credentials: 'include',
     });
@@ -213,7 +217,7 @@ export const deleteVehicle = async (id: string): Promise<{ message: string }> =>
 };
 
 export const restockVehicle = async (id: string, quantity: number): Promise<{ message: string; vehicle?: Vehicle }> => {
-  let response = await fetch(`/api/vehicles/restock/${id}`, {
+  let response = await fetch(`${BASE_URL}/api/vehicles/restock/${id}`, {
     method: 'POST',
     credentials: 'include',
     headers: {
@@ -223,7 +227,7 @@ export const restockVehicle = async (id: string, quantity: number): Promise<{ me
   });
 
   if (response.status === 404) {
-    response = await fetch(`/api/vehicles/${id}/restock`, {
+    response = await fetch(`${BASE_URL}/api/vehicles/${id}/restock`, {
       method: 'POST',
       credentials: 'include',
       headers: {
@@ -243,7 +247,7 @@ export const restockVehicle = async (id: string, quantity: number): Promise<{ me
 };
 
 export const purchaseVehicle = async (id: string, quantity: number): Promise<{ message: string; vehicle?: Vehicle }> => {
-  let response = await fetch(`/api/vehicles/purchase/${id}`, {
+  let response = await fetch(`${BASE_URL}/api/vehicles/purchase/${id}`, {
     method: 'POST',
     credentials: 'include',
     headers: {
@@ -253,7 +257,7 @@ export const purchaseVehicle = async (id: string, quantity: number): Promise<{ m
   });
 
   if (response.status === 404) {
-    response = await fetch(`/api/vehicles/${id}/purchase`, {
+    response = await fetch(`${BASE_URL}/api/vehicles/${id}/purchase`, {
       method: 'POST',
       credentials: 'include',
       headers: {
@@ -292,7 +296,9 @@ export const searchVehiclesApi = async (filters: SearchFilters): Promise<Vehicle
   }
 
   const queryString = queryParams.toString();
-  const url = queryString ? `/api/vehicles/search?${queryString}` : '/api/vehicles/view-all';
+  const url = queryString
+    ? `${BASE_URL}/api/vehicles/search?${queryString}`
+    : `${BASE_URL}/api/vehicles/view-all`;
 
   const response = await fetch(url, {
     method: 'GET',

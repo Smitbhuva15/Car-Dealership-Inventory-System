@@ -29,7 +29,6 @@ export const registerController = async (
   }
 };
 
-
 export const loginController = async (
   req: Request,
   res: Response
@@ -37,11 +36,14 @@ export const loginController = async (
   try {
     const result = await login(req.body);
 
+    const isProduction = process.env.NODE_ENV === "production";
+
     res.cookie("token", result.token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
+      secure: isProduction,
+      sameSite: isProduction ? "none" : "lax",
       maxAge: 24 * 60 * 60 * 1000, // 1 day
+      path: "/",
     });
 
     return res.status(200).json({
@@ -49,6 +51,7 @@ export const loginController = async (
       user: result.user,
     });
   } catch (error: any) {
+    console.log (error);
     if (
       error.message.includes("required") ||
       error.message.includes("Invalid email or password")
